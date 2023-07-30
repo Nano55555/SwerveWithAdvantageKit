@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.Swerve;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -15,58 +17,68 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-
+import frc.robot.lib.math.Conversions;
 
 /** Class with methods that get used in states of DrivetrainStateMachine */
 public class Swerve extends SubsystemBase{
 
     public static SwerveDrivePoseEstimator swerveOdometry;
-    public static SwerveModuleFalcon500[] mSwerveMods;
+    public SwerveModule[] mSwerveMods;
+
+    public GyroIO gyro;
 
     public static Timer timer = new Timer();
 
     private static double rollOffset = 0.0;
     private static double pitchOffset = 0.0;
 
-
-    private final SwerveIO flSwerveIO;
-    private final SwerveIO frSwerveIO;
-    private final SwerveIO blSwerveIO;
-    private final SwerveIO brSwerveIO;
-    private final SwerveIOInputsAutoLogged inputs = new SwerveIOInputsAutoLogged();
+    private final static GyroIOInputsAutoLogged GyroInputs = new GyroIOInputsAutoLogged();
    
-    public Swerve( SwerveIO flSwerveIO,
-    SwerveIO frSwerveIO,
-    SwerveIO blSwerveIO,
-    SwerveIO brSwerveIO ) {
-        this.flSwerveIO  = flSwerveIO;
-        this.frSwerveIO = frSwerveIO;
-        this.blSwerveIO = blSwerveIO;
-        this.brSwerveIO = brSwerveIO;
+    public Swerve(
+    GyroIO gyro,
+    SwerveModuleIO flModuleIO,
+    SwerveModuleIO frModuleIO,
+    SwerveModuleIO blModuleIO,
+    SwerveModuleIO brModuleIO) {
+        this.gyro = gyro;
+        mSwerveMods = new SwerveModule[]{
+            new SwerveModule(flModuleIO, 0),
+            new SwerveModule(frModuleIO, 1),
+            new SwerveModule(blModuleIO, 2),
+            new SwerveModule(brModuleIO, 3),
+        };
 
         swerveOdometry = new SwerveDrivePoseEstimator(
             Constants.SWERVE.SWERVE_KINEMATICS, 
-            SwerveModuleFalcon500.gyro.getRotation2d(), 
+            Rotation2d.fromDegrees(GyroInputs.yaw), 
             getModulePositions(), 
             new Pose2d()
         );
+    }
     
+    @Override
+    public void periodic(){
+        for(SwerveModule mod : mSwerveMods){
+            mod.period();
+        }
+        gyro.updateInputs(GyroInputs);
+        Logger.getInstance().processInputs("Gyro", GyroInputs);
     }
 
     public static void zeroRoll() {
-        rollOffset =  SwerveModuleFalcon500.gyro.getRoll();
+        rollOffset = GyroInputs.roll;
     }
 
     public static double getRoll() {
-        return  SwerveModuleFalcon500.gyro.getRoll() - rollOffset;
+        return GyroInputs.roll - rollOffset;
     }
 
     public static void zeroPitch() {
-        pitchOffset =  SwerveModuleFalcon500.gyro.getPitch();
+        pitchOffset = GyroInputs.pitch;
     }
 
     public static double getPitch() {
-        return  SwerveModuleFalcon500.gyro.getPitch() - pitchOffset;
+        return  GyroInputs.pitch - pitchOffset;
     }
     
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -85,8 +97,8 @@ public class Swerve extends SubsystemBase{
                                 );
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, Constants.SWERVE.MAX_SPEED);
 
-        for(SwerveModuleFalcon500 mod : mSwerveMods){
-            mod.setDesiredState(swerveModuleStates[mod.moduleNumber], isOpenLoop);
+        for(SwerveModule mod : mSwerveMods){
+            mod.io.setDesiredState(swerveModuleStates[mod.moduleNumber], isOpenLoop, mod.getState());
         }
     }    
 
@@ -94,8 +106,8 @@ public class Swerve extends SubsystemBase{
     public void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.SWERVE.MAX_SPEED);
         
-        for(SwerveModuleFalcon500 mod : mSwerveMods){
-            mod.setDesiredState(desiredStates[mod.moduleNumber], false);
+        for(SwerveModule mod : mSwerveMods){
+            mod.io.setDesiredState(desiredStates[mod.moduleNumber], false, mod.getState());
         }
     }
 
@@ -109,7 +121,7 @@ public class Swerve extends SubsystemBase{
 
     public SwerveModuleState[] getModuleStates(){
         SwerveModuleState[] states = new SwerveModuleState[4];
-        for(SwerveModuleFalcon500 mod : mSwerveMods){
+        for(SwerveModule mod : mSwerveMods){
             states[mod.moduleNumber] = mod.getState();
         }
         return states;
@@ -117,30 +129,20 @@ public class Swerve extends SubsystemBase{
 
     public SwerveModulePosition[] getModulePositions(){
         SwerveModulePosition[] positions = new SwerveModulePosition[4];
-        for(SwerveModuleFalcon500 mod : mSwerveMods){
+        for(SwerveModule mod : mSwerveMods){
             positions[mod.moduleNumber] = mod.getPosition();
         }
         return positions;
     }
 
-    public void zeroGyro(){
-        SwerveModuleFalcon500.gyro.setYaw(0);
-    }
-
     public Rotation2d getYaw() {
-        return (Constants.SWERVE.INVERT_GYRO) ? Rotation2d.fromDegrees(360 -  SwerveModuleFalcon500.gyro.getYaw()) : Rotation2d.fromDegrees( SwerveModuleFalcon500.gyro.getYaw());
+        return (Constants.SWERVE.INVERT_GYRO) ? Rotation2d.fromDegrees(360 - GyroInputs.yaw) : Rotation2d.fromDegrees(GyroInputs.yaw);
     }
 
     public void resetModulesToAbsolute(){
-        for(SwerveModuleFalcon500 mod : mSwerveMods){
-            mod.resetToAbsolute();
+        for(SwerveModule mod : mSwerveMods){
+            double absolutePosition = Conversions.degreesToFalcon(mod.getCanCoder().getDegrees() - mod.angleOffset.getDegrees(), Constants.SWERVE.ANGLE_GEAR_RATIO);
+            mod.io.resetToAbsolute(absolutePosition);
         }
-    }
-    @Override
-  public void periodic(){
-    flSwerveIO.updateInputs(inputs);
-    frSwerveIO.updateInputs(inputs);
-    blSwerveIO.updateInputs(inputs);
-    brSwerveIO.updateInputs(inputs);
     }
 }

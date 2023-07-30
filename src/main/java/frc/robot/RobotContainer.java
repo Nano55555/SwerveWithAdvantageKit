@@ -5,16 +5,23 @@
 package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Swerve.GyroIO;
+import frc.robot.subsystems.Swerve.GyroPigeon2;
 import frc.robot.subsystems.Swerve.Swerve;
-import frc.robot.subsystems.Swerve.SwerveIO;
+
 import frc.robot.subsystems.Swerve.SwerveModuleFalcon500;
+import frc.robot.subsystems.Swerve.SwerveModuleIO;
+import frc.robot.subsystems.Swerve.SwerveModuleSim;
+
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -29,28 +36,55 @@ public class RobotContainer {
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  public final static CommandPS4Controller m_driverController =
+      new CommandPS4Controller(OperatorConstants.kDriverControllerPort);
       
-      double translationVal = -1.0 * MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.TRANSLATION_VAL) , Constants.STICK_DEADBAND);
-      double strafeVal = -1.0 * MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.STRAFE_VAL), Constants.STICK_DEADBAND);
-      double rotationVal = MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.ROTATION_VAL), Constants.STICK_DEADBAND);
+      // double translationVal = -1.0 * MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.TRANSLATION_VAL) , Constants.STICK_DEADBAND);
+      // double strafeVal = -1.0 * MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.STRAFE_VAL), Constants.STICK_DEADBAND);
+      // double rotationVal = MathUtil.applyDeadband(-m_driverController.getRawAxis(Constants.DriverControls.ROTATION_VAL), Constants.STICK_DEADBAND);
 
-  public static Swerve swerve; 
+  private Swerve swerve; 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     
     switch(Constants.currentMode){
       case REAL:
-       swerve = new Swerve(
-      new SwerveModuleFalcon500(0), 
-      new SwerveModuleFalcon500(1),
-      new SwerveModuleFalcon500(2),
-      new SwerveModuleFalcon500(3));
+          swerve = new Swerve(
+          new GyroPigeon2(Constants.CAN_IDS.PIDGEON),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod0.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod1.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod2.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod3.constants));
+          Timer.delay(1.0);
+          swerve.resetModulesToAbsolute();
+          swerve.gyro.zeroGyro();
+          break;
       case REPLAY:
-       swerve = new Swerve(new SwerveIO(){}, new SwerveIO(){}, new SwerveIO(){}, new SwerveIO(){});
-  }
+      swerve = new Swerve(
+          new GyroIO(){},
+          new SwerveModuleIO(){},
+          new SwerveModuleIO(){},
+          new SwerveModuleIO(){},
+          new SwerveModuleIO(){});
+      case SIM:
+          new Swerve(
+          new GyroIO(){},
+          new SwerveModuleSim(){},
+          new SwerveModuleSim(){},
+          new SwerveModuleSim(){},
+          new SwerveModuleSim(){});
+          break;
+      default:
+      swerve = new Swerve(
+          new GyroPigeon2(Constants.CAN_IDS.PIDGEON),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod0.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod1.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod2.constants),
+          new SwerveModuleFalcon500(Constants.SWERVE.Mod3.constants));
+          break;
+
+}
     // Configure the trigger bindings
     configureBindings();
   }
@@ -65,21 +99,20 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    swerve.setDefaultCommand(new RunCommand(()-> swerve.drive(
-      new Translation2d(translationVal, strafeVal).times(Constants.SWERVE.MAX_SPEED), 
-      rotationVal * Constants.SWERVE.MAX_ANGULAR_VELOCITY, 
-      true,
-      false
-  ), swerve));
+    if(Constants.currentMode == Constants.Mode.REAL){
+  //   swerve.setDefaultCommand(new RunCommand(()-> swerve.drive(
+  //     new Translation2d(translationVal, strafeVal).times(Constants.SWERVE.MAX_SPEED), 
+  //     rotationVal * Constants.SWERVE.MAX_ANGULAR_VELOCITY, 
+  //     true,
+  //     true
+  // ),swerve));
+  //   }
   }
+}
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
    * @return the command to run in autonomous
    */
-  public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
-  }
 }

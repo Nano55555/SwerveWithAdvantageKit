@@ -11,7 +11,6 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -56,13 +55,13 @@ public class Robot extends LoggedRobot {
     switch (Constants.currentMode) {
       //Advantage Kit example code
       case REAL:
-        logger.addDataReceiver(new WPILOGWriter("C:\\Document!"));
+        logger.addDataReceiver(new WPILOGWriter("C:\\WPILOG"));
         logger.addDataReceiver(new NT4Publisher());
         break;
 
       // Running a physics simulator, log to local folder
       case SIM:
-        logger.addDataReceiver(new WPILOGWriter("C:\\Document!"));
+        logger.addDataReceiver(new WPILOGWriter("C:\\WPILOG"));
         logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -112,7 +111,7 @@ public class Robot extends LoggedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {

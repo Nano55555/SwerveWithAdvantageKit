@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.lib.util.COTSFalconSwerveConstants;
+import frc.robot.lib.util.SwerveModuleConstants;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -121,18 +122,60 @@ public final class Constants {
     /* Neutral Modes */
     public static final NeutralMode ANGLE_NEUTRAL_MODE = NeutralMode.Coast;
     public static final NeutralMode DRIVE_NEUTRAL_MODE = NeutralMode.Brake;
+  
+     /* Module Specific Constants */
+    /* Front Left Module - Module 0 */
+    public static final class Mod0 { 
+      public static final int driveMotorID = 11;
+      public static final int angleMotorID = 12;
+      public static final int canCoderID = 10;
+    // public static final Rotation2d angleOffset = Rotation2d.fromDegrees(0.0);
+      public static final SwerveModuleConstants constants = 
+          new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID);
   }
-  public static final Mode currentMode = Mode.REAL;
-    
-  public static enum Mode {
-    /** Running on a real robot. */
-    REAL,
 
-    /** Running a physics simulator. */
-    SIM,
+  /* Front Right Module - Module 1 */
+  public static final class Mod1 {
+    public static final int driveMotorID = 21;
+    public static final int angleMotorID = 22;
+    public static final int canCoderID = 20;
+    // public static final Rotation2d angleOffset = Rotation2d.fromDegrees(0.0);
+    public static final SwerveModuleConstants constants = 
+        new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID);
+}
 
-    /** Replaying from a log file. */
-    REPLAY
+/* Back Left Module - Module 2 */
+public static final class Mod2 {
+    public static final int driveMotorID = 31;
+    public static final int angleMotorID = 32;
+    public static final int canCoderID = 30;
+    // public static final Rotation2d angleOffset = Rotation2d.fromDegrees(0.0);
+    public static final SwerveModuleConstants constants = 
+        new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID);
+}
+
+/* Back Right Module - Module 3 */
+public static final class Mod3 { 
+    public static final int driveMotorID = 41;
+    public static final int angleMotorID = 42;
+    public static final int canCoderID = 40;
+    // public static final Rotation2d angleOffset = Rotation2d.fromDegrees(0.0);
+    public static final SwerveModuleConstants constants = 
+        new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID);
   }
+  }
+
+public static final Mode currentMode = Mode.REAL;
+
+public static enum Mode {
+/** Running on a real robot. */
+REAL,
+
+/** Running a physics simulator. */
+SIM,
+
+/** Replaying from a log file. */
+REPLAY
+}
 }
 
